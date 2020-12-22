@@ -4,9 +4,9 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Payments extends Model 
+class Transactions extends Model
 {
-    protected $table = 'payments';
+    protected $table = 'transactions';
 
     public function order()
     {

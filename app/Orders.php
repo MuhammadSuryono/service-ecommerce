@@ -4,7 +4,7 @@ namespace App;
 
 use Illuminate\Database\Eloquent\Model;
 
-class Orders extends Model 
+class Orders extends Model
 {
     protected $table = 'orders';
 
@@ -20,6 +20,6 @@ class Orders extends Model
 
     public function payment()
     {
-        return $this->hasOne('App\Payments', 'foreign_key', 'order_id');
+        return $this->hasOne('App\Transactions', 'foreign_key', 'order_id');
     }
 }

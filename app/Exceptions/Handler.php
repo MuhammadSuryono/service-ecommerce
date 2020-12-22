@@ -35,6 +35,10 @@ class Handler extends ExceptionHandler
      */
     public function report(Throwable $exception)
     {
+        if (app()->bound('sentry') && $this->shouldReport($exception)) {
+            app('sentry')->captureException($exception);
+        }
+
         parent::report($exception);
     }
 
@@ -49,6 +53,27 @@ class Handler extends ExceptionHandler
      */
     public function render($request, Throwable $exception)
     {
-        return parent::render($request, $exception);
+        $rendered = parent::render($request, $exception);
+
+        $message = $exception->getMessage();
+        if ($rendered->getStatusCode() == 405) {
+            $message = "Method Not Allowed";
+        }
+
+        $response = [
+            'response' => [
+                'code' => $rendered->getStatusCode(),
+                'message' => $message,
+            ],
+            'data' => (object)null,
+            'request' => request()->all()
+        ];
+
+        if (env('APP_ENV') != 'production') {
+            $response['response']['file'] = $exception->getFile();
+            $response['response']['line'] = $exception->getLine();
+        }
+
+        return response()->json($response, $rendered->getStatusCode());
     }
 }

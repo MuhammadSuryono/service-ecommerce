@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Customers;
@@ -9,117 +10,126 @@ use App\Orders;
 
 class CustomerController extends Controller
 {
+    /***
+     * CustomerController constructor.
+     */
     public function __construct()
     {
-        
+
     }
 
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAll()
     {
-        $data = Customers::all();
-        Log::info("Get all data customers");
-        return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
+        $data = User::all();
+        return $this->BuildResponse(true, "success retrieve data", $data, 200);
     }
 
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getById($id)
     {
-        $data = Customers::find($id);
+        $data = User::find($id);
         if(!$data)
         {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> $data], 404);
+            return $this->BuildResponse(false, "Failed retrieve data", [], 404);
         }
-        Log::info("Get data customers $data->full_name");
-        return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
+        return $this->BuildResponse(true, "Success retrieve data", $data, 200);
+
     }
 
-    public function insert(Request $request)
+    /***
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function register(Request $request)
     {
-        $this->validate($request,
-        [
-            'data.attributes.full_name'=> 'required',
-            'data.attributes.username'=> 'required',
-            'data.attributes.email'=> 'required|email',
-            'data.attributes.phone_number'=> 'required'
+        $this->validate($request, [
+           'fullname' => 'required',
+           'email' => 'required',
+           'npwp' => 'required',
+           'address' => 'required',
+           'nohp' => 'required',
+           'username' => 'required',
+           'password' => 'required',
         ]);
-        $customer = new Customers();
-        $customer->fullname = $request->input('data.attributes.full_name');
-        $customer->username = $request->input('data.attributes.username');
-        $customer->email = $request->input('data.attributes.email');
-        $customer->phone_number = $request->input('data.attributes.phone_number');
 
-        if($customer->save())
+        $customer = new User();
+        $customer->fullname = $request->input('fullname');
+        $customer->npwp = $request->input('npwp');
+        $customer->address = $request->input('address');
+        $customer->email = $request->input('email');
+        $customer->phone_number = $request->input('nohp');
+        $customer->username = $request->input('username');
+        $customer->password = $request->input('password');
+
+        if ($customer->save())
         {
-            Log::info("Success input customer");
-            return response()->json(
-                [
-                    "data"=>[
-                        "attributes"=>[
-                            "full_name" =>$request->input('data.attributes.full_name'),
-                            "username" =>$request->input('data.attributes.username'),
-                            "email" =>$request->input('data.attributes.email'),
-                            "phone_number" =>$request->input('data.attributes.phone_number')
-                        ]
-                    ]
-                        ], 201
-            );
+            return $this->BuildResponse(true, "Success register!", [], 200);
         }
+
+        return $this->BuildResponse(false, "Failed register!", [], 400);
     }
 
-
+    /***
+     * @param Request $request
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
     public function update(Request $request, $id)
     {
-        $this->validate($request,
-        [
-            'data.attributes.full_name'=> 'required',
-            'data.attributes.username'=> 'required',
-            'data.attributes.email'=> 'required|email',
-            'data.attributes.phone_number'=> 'required'
+        $this->validate($request, [
+            'fullname' => 'required',
+            'email' => 'required',
+            'npwp' => 'required',
+            'address' => 'required',
+            'nohp' => 'required|int',
         ]);
 
-        $customer = Customers::find($id);
+        $customer = User::find($id);
 
         if(!$customer)
         {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> ''], 404);
+            return $this->BuildResponse(false, "User not found!", $customer, 404);
         }
-        $customer->fullname = $request->input('data.attributes.full_name');
-        $customer->username = $request->input('data.attributes.username');
-        $customer->email = $request->input('data.attributes.email');
-        $customer->phone_number = $request->input('data.attributes.phone_number');
+        $customer->fullname = $request->input('full_name');
+        $customer->npwp = $request->input('npwp');
+        $customer->address = $request->input('address');
+        $customer->email = $request->input('email');
+        $customer->phone_number = $request->input('nohp');
+        $customer->username = $request->input('username');
+        $customer->password = $request->input('password');
 
-        if($customer->save())
+        if ($customer->save())
         {
-            Log::info("Success input customer");
-            return response()->json(
-                [
-                    "data"=>[
-                        "attributes"=>[
-                            "full_name" =>$request->input('data.attributes.full_name'),
-                            "username" =>$request->input('data.attributes.username'),
-                            "email" =>$request->input('data.attributes.email'),
-                            "phone_number" =>$request->input('data.attributes.phone_number')
-                        ]
-                    ]
-                        ], 201
-            );
+            return $this->BuildResponse(true, "Success update data user!", [], 200);
         }
+
+        return $this->BuildResponse(false, "Failed update data user!", [], 400);
     }
 
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function delete($id)
     {
-        $data = Customers::find($id);
+        $data = User::find($id);
         if(!$data)
         {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed delete data","status" => false,"data"=> ''], 404);
+            return $this->BuildResponse(false, "User not found!", $data, 404);
         }
 
         if($data->delete())
         {
-            Log::info('Data success delete');
-            return response()->json(["messages"=>"success delete data","status" => true,"data"=> $data], 200);
+            return $this->BuildResponse(true, "Success delete data user!", [], 200);
         }
+        return $this->BuildResponse(false, "Failed delete data user!", [], 400);
     }
 }

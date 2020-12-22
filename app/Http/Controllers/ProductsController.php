@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Products;
@@ -9,106 +10,153 @@ use App\Orders;
 
 class ProductController extends Controller
 {
-    public function __construct()
+    /***
+     * @var Request
+     */
+    private $request;
+
+    /***
+     * ProductController constructor.
+     * @param Request $request
+     */
+    public function __construct(Request $request)
     {
-        
+        $this->request = $request;
     }
 
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAll()
     {
         $data = Products::All();
-        Log::info("Get all data Products");
-        return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
+        return $this->BuildResponse(true, "success retrieve data", $data, 200);
     }
 
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getById($id)
     {
         $data = Products::find($id);
         if(!$data)
         {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> $data], 404);
+            return $this->BuildResponse(false, "Failed retrieve data", $data, 404);
         }
-        Log::info("Get data Products");
-        return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
+        return $this->BuildResponse(true, "success retrieve data", $data, 200);
     }
 
-    public function insert(Request $request)
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function getProductByCategory()
     {
-        $this->validate($request,
-        [
-            'data.attributes.name' => 'required',
-            'data.attributes.price' => 'required'
+        $this->validate($this->request, [
+           'category_id' => 'required',
         ]);
-        $product = new Products();
-        $product->name = $request->input('data.attributes.name');
-        $product->price = $request->input('data.attributes.price');
 
-        if($product->save())
+        $category = Category::find($this->request->input('category_id'));
+        $data = Products::where('category_id', $this->request->input('category_id'));
+        return $this->BuildResponse(true, "Success retrieve data", ["category" => $category, "product" => $data->get()], 200);
+    }
+
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function insert()
+    {
+        $this->validate($this->request,
+        [
+            'item_name' => 'required',
+            'item_code' => 'required',
+            'category_id' => 'required',
+            'stock' => 'required',
+        ]);
+
+        $check = Products::where('item_code');
+        if ($check->exists())
         {
-            Log::info("Success input product");
-            return response()->json(
-                [
-                    "data"=>[
-                        "attributes"=>[
-                            "name" =>$request->input('data.attributes.name'),
-                            "price" =>$request->input('data.attributes.price')
-                        ]
-                    ]
-                        ], 201
-            );
+            return $this->BuildResponse(false, "Item code is exists", $check->first(), 400);
         }
+
+        $image = $this->request->file('image');
+
+        $product = new Products();
+        $product->item_name = $this->request->input('item_name');
+        $product->item_code = $this->request->input('item_code');
+        $product->category_id = $this->request->input('category_id');
+        $product->stock = $this->request->input('stock');
+        $product->color = $this->request->input('color');
+        $product->item_size = $this->request->input('size');
+        $product->description = $this->request->input('description');
+        $product->image = '-';
+
+        if (!empty($image))
+        {
+            $imageName = time()."-".$image->getClientOriginalName();
+            $destination = storage_path('/app/images');
+            $image->move($destination, $imageName);
+            $product->image = $imageName;
+        }
+
+        $product->save();
+        return $this->BuildResponse(true, "Create product is success", $this->request->all(), 200);
     }
 
-
-    public function update(Request $request, $id)
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function update()
     {
-        $this->validate($request,
-        [
-            'data.attributes.name' => 'required',
-            'data.attributes.price' => 'required'
+        $this->validate($this->request, [
+            'id' => 'required',
+            'item_name' => 'required',
+            'category_id' => 'required',
+            'stock' => 'required',
+            'selection_stock' => 'required',
         ]);
+
+        $id = $this->request->input('id');
         $product = Products::find($id);
         if(!$product)
         {
             Log::error("Data not found");
-            return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> ''], 404);
+            return response()->json(["message"=>"failed retrieve data","status" => false,"data"=> ''], 404);
         }
-        $product->name = $request->input('data.attributes.name');
-        $product->price = $request->input('data.attributes.price');
 
-        if($product->save())
+        $stock = $this->request->input('stock');
+        if ($this->request->input('selection_stock') == 'penambahan')
         {
-            Log::info("Success input product");
-            return response()->json(
-                [
-                    "data"=>[
-                        "attributes"=>[
-                            "name" =>$request->input('data.attributes.name'),
-                            "price" =>$request->input('data.attributes.price')
-                        ]
-                    ]
-                        ], 201
-            );
+            $stock = $product->stock + $stock;
         }
+        $product->item_name = $this->request->input('item_name');
+        $product->category_id = $this->request->input('category_id');
+        $product->stock = $stock;
+        $product->color = $this->request->input('color');
+        $product->item_size = $this->request->input('size');
+        $product->description = $this->request->input('description');
 
-        Log::error("Data not found");
-        return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> ''], 403);
+        $product->save();
+        return $this->BuildResponse(true, "Update product is success", $this->request->all(), 200);
     }
 
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function delete($id)
     {
-        $data = Products::find($id);
-        if(!$data)
+        $product = Products::find($id);
+        if(!$product)
         {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed delete data","status" => false,"data"=> ''], 404);
+            return response()->json(["message"=>"failed retrieve data","status" => false,"data"=> ''], 404);
         }
 
-        if($data->delete())
-        {
-            Log::info('Data success delete');
-            return response()->json(["messages"=>"success delete data","status" => true,"data"=> $data], 200);
-        }
+        $product->delete();
+        return response()->json(["message"=>"success delete data","status" => true,"data"=> $product], 200);
     }
 }

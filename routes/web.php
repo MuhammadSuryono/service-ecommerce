@@ -15,38 +15,59 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->post('notif', 'PaymentController@notif');
+$router->get('storage/images/{filename}', function ($filename) use ($router)
+{
+    $path = storage_path('app/images/' . $filename);
+    if (!File::exists($path)) {
+        abort(404);
+    }
+
+    $file = File::get($path);
+    $type = File::mimeType($path);
+
+    $response = Response::make($file, 200);
+    $response->header("Content-Type", $type);
+
+    return $response;
+});
+
+
+$router->post('notif', 'TransactionController@notif');
 
 $router->group(['prefix'=>'api/v1'], function() use ($router)
 {
     // Customer Route
-    $router->post('customer', 'CustomerController@insert');
+    $router->post('customer/register', 'CustomerController@register');
     $router->put('customer/{id}', 'CustomerController@update');
     $router->delete('customer/{id}', 'CustomerController@delete');
     $router->get('customer', 'CustomerController@getAll');
     $router->get('customer/{id}', 'CustomerController@getById');
 
     // Order Route
-    $router->post('order', 'OrderController@insert');
-    $router->put('order/{id}', 'OrderController@update');
-    $router->delete('order/{id}', 'OrderController@delete');
+    $router->post('order/push', 'OrderController@insert');
     $router->get('order', 'OrderController@getAll');
     $router->get('order/{id}', 'OrderController@getById');
+    $router->get('order/user', 'OrderController@GetOrderByUserId');
+
+    // category route
+    $router->get('category', 'CategoryController@getAll');
+    $router->post('category', 'CategoryController@create');
+    $router->post('category/update', 'CategoryController@update');
+    $router->post('category/delete', 'CategoryController@delete');
+
 
     // Product Route
     $router->post('product', 'ProductController@insert');
-    $router->put('product/{id}', 'ProductController@update');
+    $router->put('product', 'ProductController@update');
     $router->delete('product/{id}', 'ProductController@delete');
     $router->get('product', 'ProductController@getAll');
+    $router->get('product/category', 'ProductController@getProductByCategory');
     $router->get('product/{id}', 'ProductController@getById');
 
     // Payment Route
-    $router->post('payment', 'PaymentController@create');
-    $router->put('payment/{id}', 'PaymentController@update');
-    $router->delete('payment/{id}', 'PaymentController@delete');
-    $router->get('payment', 'PaymentController@getAll');
-    $router->get('payment/{id}', 'PaymentController@getById');
-    $router->post('payment/midtrans/push', 'PaymentController@pushMidtrans');
-
+    $router->post('transactions/push', 'TransactionController@create');
+    $router->get('transactions', 'TransactionController@getAll');
+    $router->get('transactions/{id}', 'TransactionController@getById');
+    $router->post('transactions/midtrans/push', 'TransactionController@notif');
 
 });

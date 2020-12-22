@@ -11,87 +11,108 @@ use App\Products;
 
 class OrderController extends Controller
 {
-    public function __construct()
+    /***
+     * @var
+     */
+    private $request;
+
+    /***
+     * OrderController constructor.
+     * @param Request $request
+     */
+    public function __construct(Request $request)
     {
-        
+        $this->request = $request;
     }
 
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getAll()
     {
-        $data = Orders::with(array('orderitem' => function($query)
-        {
-            $query->select();
-        }))->with(array('customer' => function($query)
-        {
-            $query->select();
-        }))->get();
-
-        Log::info("Get all data Orders");
+        $data = Orders::all();
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
 
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getById($id)
     {
         $data = Orders::find($id);
         if(!$data)
         {
-            Log::error("Data not found");
             return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> $data], 404);
         }
-        Log::info("Get data Orders");
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
 
-    public function insert(Request $request)
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function insert()
     {
-        $request_data = $request->all();
+        $this->validate($this->request, [
+           'data' => 'required',
+            'user_id' => 'required'
+        ]);
+
+        $check = $this->CheckUser($this->request->input('user_id'));
+        if (!$check)
+        {
+            return $this->BuildResponse(false, "User not found!", $this->request->input('user_id'), 400);
+        }
+        $id_user = $this->request->input('user_id');
+        $order_id = $this->GenerateOrderId($id_user);
+
+        if ($this->CheckOrder($order_id))
+        {
+            return $this->BuildResponse(false, "Order id is exists", $order_id, 400);
+        }
+
+        $items = new OrderItemController($this->request);
+        $input = $items->createOrderItems($this->request->input('data'), $order_id);
+
         $order = new Orders();
-        $order->user_id = $request_data['data']['attributes']['user_id'];
-        $order->order_status = 'create';
+        $order->user_id = $id_user;
+        $order->order_id = $order_id;
+        $order->total_quantity = $input['total_quantity'];
+        $order->total_price = $input['total_price'];
+        $order->order_status = "Waiting Payment";
         $order->save();
 
-            $data_product = $request_data['data']['attributes']['order_detail'];
-            for($i=0; $i<count($data_product); $i++)
-            {
-                $product = new OrderItems();
-                $product->order_id = $order->id;
-                $product->product_id = $data_product[$i]['product_id'];
-                $product->quantity = $data_product[$i]['quantity'];
-                $product->save();
-            }
-            return $request;
+        return $this->BuildResponse(true, "Success create new order", $this->request->all(), 200);
     }
 
-
-    public function update(Request $request, $id)
+    /***
+     * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
+     */
+    public function GetOrderByUserId()
     {
-        $order = Orders::find($id);
-        if(!$order)
-        {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed update data","status" => false,"data"=> ''], 404);
-        }
-        $request_data = $request->all();
-        $order->user_id = $request_data['data']['attributes']['user_id'];
-        $order->order_status = $request_data['data']['attributes']['status'];
-        $order->save();
+        $this->validate($this->request, [
+            'user_id' => 'required'
+        ]);
 
-        return $request;
+        $user = $this->CheckUser($this->request->input('user_id'));
+        if (!$user)
+        {
+            return $this->BuildResponse(false, "User notfound!", [], 404);
+        }
+
+        $order = Orders::where("user_id", $this->request->input('user_id'))->get();
+        return $this->BuildResponse(true, "Success get data order", $order, 200);
     }
 
-    public function delete($id)
+    /***
+     * @param $order_id
+     * @return mixed
+     */
+    public function GetOrderByOrderId($order_id)
     {
-        $data = Orders::find($id);
-        if(!$data)
-        {
-            Log::error("Data not found");
-            return response()->json(["messages"=>"failed delete data","status" => false,"data"=> ''], 404);
-        }
-
-        if($data->delete())
-        {
-            Log::info('Data success delete');
-            return response()->json(["messages"=>"success delete data","status" => true,"data"=> $data], 200);
-        }
+        return Orders::where("order_id", $order_id)->first();
     }
+
 }

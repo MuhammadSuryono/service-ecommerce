@@ -1,0 +1,62 @@
+<?php
+
+
+namespace App\Http\Controllers;
+
+
+use App\User;
+use http\Env\Request;
+use Firebase\JWT\JWT;
+use Illuminate\Support\Facades\Hash;
+
+class AuthControllers extends Controller
+{
+    private $request;
+
+    /***
+     * AuthControllers constructor.
+     * @param Request $request
+     */
+    public function __construct(Request $request)
+    {
+        $this->request = $request;
+    }
+
+    /***
+     * @param User $user
+     * @return string
+     */
+    protected function jwt(User $user)
+    {
+        $payload = [
+            'iss' => "ecommerce-jwt",
+            'sub' => $user->email,
+            'iat' => time(),
+            'exp' => time() + 60*60,
+        ];
+
+        return JWT::encode($payload, $this->JWT_SCRET());
+    }
+
+    /***
+     * @param User $user
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function authLogin(User $user)
+    {
+        $user = User::where('email', $this->request->input('email'))->first();
+        if (!$user)
+        {
+            return $this->BuildResponse(false, "Email not found", $user, 404);
+        }
+
+        if (Hash::check($this->request->input('password'), $user->password))
+        {
+            return $this->BuildResponse(true, "Login success", $this->jwt($user), 200);
+        }
+
+        return $this->BuildResponse(false, "Password is wrong", $user, 400);
+    }
+
+
+}

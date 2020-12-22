@@ -16,7 +16,10 @@ class CreateOrdersTable extends Migration
         Schema::create('orders', function (Blueprint $table) {
             $table->bigIncrements('id');
             $table->integer('user_id');
-            $table->string('order_status');
+            $table->string('order_id')->unique();
+            $table->integer('total_quantity');
+            $table->integer('total_price');
+            $table->string('order_status')->default('waiting');
             $table->timestamps();
         });
     }
