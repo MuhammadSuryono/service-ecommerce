@@ -65,18 +65,10 @@ class TransactionController extends Controller
             return $this->BuildResponse(false, "Order id notfound!", [], 404);
         }
 
-        $order = new OrderController();
+        $order = new OrderController($this->request);
         $dataOrder = $order->GetOrderByOrderId($order_id);
 
-        $transactionId = time()+$order_id;
-        $saveTransaction = new Transactions();
-        $saveTransaction->order_id = $order_id;
-        $saveTransaction->transaction_id = $transactionId;
-        $saveTransaction->payment_type = "bank_transfer";
-        $saveTransaction->total = $dataOrder->total_price;
 
-        $saveTransaction->save();
-        $idTransaction = $saveTransaction->id;
 
         // {
         //    "status_code": "201",
@@ -98,37 +90,43 @@ class TransactionController extends Controller
         //    "fraud_status": "accept"
         //}
 
-        $body = $this->BodyMidtrans("bank_transfer", array(["gross_amount" => $dataOrder->total_price, "order_id" => $order_id]), array(["bank"=> "bni"]));
+        $body = $this->BodyMidtrans("bank_transfer", ["gross_amount" => $dataOrder->total_price, "order_id" => $order_id], ["bank"=> "bni"]);
         $header = $this->GenerateHeaderMidtrans();
 
-        $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", $header);
-
+//        $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", ['Authorization: '.$header]);
+        $response = '{"status_code":"201","status_message":"Success, Bank Transfer transaction is created","transaction_id":"1bfcbb4f-6177-4400-9736-8d5782ef4ff1","order_id":"1608820297","merchant_id":"G101348486","gross_amount":"300.00","currency":"IDR","payment_type":"bank_transfer","transaction_time":"2020-12-24 22:02:57","transaction_status":"pending","va_numbers":[{"bank":"bni","va_number":"9884848686348514"}],"fraud_status":"accept"}';
+        $req = json_decode($response);
         if ($req->status_code == "201")
         {
-            $dataUpdate = [
-              "time_create_payment" => $req->transaction_time,
-              "transaction_status" =>  $req->transaction_status,
-            ];
-
-            $this->UpdateTransaction($dataUpdate, $order_id);
-            return $this->BuildResponse(true, "Transaction success create", "", 200);
+//            $transactionId = time();
+//            $saveTransaction = new Transactions();
+//            $saveTransaction->order_id = $order_id;
+//            $saveTransaction->transaction_id = $transactionId;
+//            $saveTransaction->payment_type = "bank_transfer";
+//            $saveTransaction->total = $dataOrder->total_price;
+//            $saveTransaction->time_create_payment = $req->transaction_time;
+//            $saveTransaction->transaction_status = $req->transaction_status;
+//            $saveTransaction->transaction_time = "-";
+//            $saveTransaction->detail_transactions = $response;
+//            $saveTransaction->save();
+            return $this->BuildResponse(true, "Transaction success create", ["body" =>$body, "response" => $response], 200);
         }
+
+        return $this->BuildResponse(true, "Failed create transactions", $body, 200);
 
     }
 
     public function notif(Request $request)
     {
-        $req = $request->all();
-        $pay = Transactions::where('order_id', $req['order_id'])->get();
+        $pay = Transactions::where('order_id', $request->input('order_id'))->first();
         // return $pay;
-        $pays = Transactions::find($pay[0]->id);
         if(!$pay)
         {
-            return response()->json(["messages"=> "Id order not found","status"=>"error"]);
+            return response()->json(["messages"=> "Id order not found","status"=>false], 400);
         }
-        $pays->transaction_time = $req['transaction_time'];
-        $pays->transaction_status = $req['transaction_status'];
-        $pays->transaction_id = $req['transaction_id'];
+        $pays = Transactions::find($pay->id);
+        $pays->transaction_time = $request->input('settlement_time');
+        $pays->transaction_status = $request->input('transaction_status');
         if($pays->save())
         {
             return response()->json(["messages"=> "Perubahan transaksi"], 200);

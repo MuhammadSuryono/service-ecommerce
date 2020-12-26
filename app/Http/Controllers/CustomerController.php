@@ -31,7 +31,7 @@ class CustomerController extends Controller
      * @param $id
      * @return \Illuminate\Http\JsonResponse
      */
-    public function getById($id)
+    public function getById(Request $request, $id)
     {
         $data = User::find($id);
         if(!$data)
@@ -67,13 +67,14 @@ class CustomerController extends Controller
         $customer->phone_number = $request->input('nohp');
         $customer->username = $request->input('username');
         $customer->password = $request->input('password');
+        $customer->ktp = $request->input('ktp');
 
         if ($customer->save())
         {
-            return $this->BuildResponse(true, "Success register!", [], 200);
+            return $this->BuildResponse(true, "Success register!", $request->all(), 200);
         }
 
-        return $this->BuildResponse(false, "Failed register!", [], 400);
+        return $this->BuildResponse(false, "Failed register!", $request->all(), 400);
     }
 
     /***
@@ -105,6 +106,7 @@ class CustomerController extends Controller
         $customer->phone_number = $request->input('nohp');
         $customer->username = $request->input('username');
         $customer->password = $request->input('password');
+        $customer->ktp = $request->input('ktp');
 
         if ($customer->save())
         {

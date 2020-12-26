@@ -29,7 +29,7 @@ class ProductController extends Controller
      */
     public function getAll()
     {
-        $data = Products::All();
+        $data = Products::join('categories', 'products.category_id', '=', 'categories.id')->get();
         return $this->BuildResponse(true, "success retrieve data", $data, 200);
     }
 
@@ -39,7 +39,7 @@ class ProductController extends Controller
      */
     public function getById($id)
     {
-        $data = Products::find($id);
+        $data = Products::join('categories', 'products.category_id', '=', 'categories.id')->where('products.id',$id)->first();
         if(!$data)
         {
             return $this->BuildResponse(false, "Failed retrieve data", $data, 404);

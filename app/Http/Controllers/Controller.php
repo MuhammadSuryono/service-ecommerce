@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Orders;
 use App\User;
+use Illuminate\Support\Facades\Log;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
 {
     private $JWT_SECRET = 'CV-BIG';
     private $SERVER_KEY = "SB-Mid-server-jMa1yoEHLCbuNPkScwv9LKwI";
+    protected $API_KEY_RAJA_ONGKIR = "8f832337b09d6a1449dbe6044d90fd3f";
 
     /***
      * @param bool $status
@@ -80,8 +82,8 @@ class Controller extends BaseController
      */
     public function GenerateHeaderMidtrans()
     {
-        $enc = base64_encode($this->SERVER_KEY+":");
-        $header = "Basic "+$enc;
+        $enc = base64_encode($this->SERVER_KEY.":");
+        $header = "Basic ".$enc;
 
         return $header;
     }
@@ -98,6 +100,7 @@ class Controller extends BaseController
             'Accept: application/json'
         ];
 
+
         if(!empty($header)) $headr = array_merge($headr, $header);
 
         $crl = curl_init();
@@ -109,8 +112,8 @@ class Controller extends BaseController
             CURLOPT_MAXREDIRS      => 10,     // stop after 10 redirects
             CURLOPT_ENCODING       => "",     // handle compressed
             CURLOPT_AUTOREFERER    => true,   // set referrer on redirect
-            CURLOPT_CONNECTTIMEOUT => $this->timeout,    // time-out on connect
-            CURLOPT_TIMEOUT        => $this->timeout,    // time-out on response
+            CURLOPT_CONNECTTIMEOUT => 60,    // time-out on connect
+            CURLOPT_TIMEOUT        => 60,    // time-out on response
             CURLOPT_URL => $url,
             CURLOPT_POSTFIELDS => json_encode($body),
             CURLOPT_HTTPHEADER => $headr,
@@ -124,6 +127,44 @@ class Controller extends BaseController
 
         Log::info($url);
         Log::info($header);
+        Log::info($body);
+        Log::info($error);
+        Log::info($result);
+        return json_decode($result);
+    }
+
+    public function http_request_get(string $url, $body=[], $header=[])
+    {
+        $headr = [
+            'Content-Type: application/json',
+            'Accept: application/json'
+        ];
+
+
+        if(!empty($header)) $headr = array_merge($headr, $header);
+
+        $crl = curl_init();
+
+        curl_setopt_array($crl, array(
+            CURLOPT_URL => $url,
+            CURLOPT_RETURNTRANSFER => true,
+            CURLOPT_ENCODING => "",
+            CURLOPT_MAXREDIRS => 10,
+            CURLOPT_TIMEOUT => 30,
+            CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+            CURLOPT_CUSTOMREQUEST => "GET",
+            CURLOPT_HTTPHEADER => $headr,
+        ));
+
+
+        $result = curl_exec($crl);
+        $error = curl_error($crl);
+
+        curl_close($crl);
+
+        Log::info($url);
+        Log::info("HEADER");
+        Log::info($headr);
         Log::info($body);
         Log::info($error);
         Log::info($result);
@@ -146,9 +187,28 @@ class Controller extends BaseController
         return $body;
     }
 
+    /***
+     * @return string[]
+     */
     public function ListBank()
     {
         return ["bni", "bca", "permata"];
+    }
+
+    /***
+     * @return string
+     */
+    public function GetKeyRajaOngkir()
+    {
+        return $this->API_KEY_RAJA_ONGKIR;
+    }
+
+    /***
+     * @return string
+     */
+    public function BaseUrlRajaOngkir()
+    {
+        return "https://api.rajaongkir.com/starter/";
     }
 
 }

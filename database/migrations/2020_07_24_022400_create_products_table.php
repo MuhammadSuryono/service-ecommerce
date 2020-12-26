@@ -19,6 +19,7 @@ class CreateProductsTable extends Migration
             $table->string('item_name');
             $table->integer('category_id');
             $table->integer('stock');
+            $table->string('unit');
             $table->string('color')->nullable();
             $table->string('item_size')->nullable();
             $table->string('image')->nullable();

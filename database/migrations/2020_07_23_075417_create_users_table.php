@@ -19,10 +19,13 @@ class CreateUsersTable extends Migration
             $table->string('email')->unique();
             $table->string('username');
             $table->string('password');
-            $table->string('npwp')->unique();
+            $table->string('no_npwp')->unique();
+            $table->string('npwp');
             $table->string('address');
             $table->string("phone_number");
-            $table->string("ktp")->unique();
+            $table->string("scope");
+            $table->string("no_ktp")->unique();
+            $table->string('ktp');
             $table->timestamps();
         });
     }

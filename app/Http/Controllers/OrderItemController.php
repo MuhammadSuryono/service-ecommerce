@@ -34,7 +34,11 @@ class OrderItemController extends Controller
         foreach ($data as $item)
         {
             $idItem = $item['id_item'];
-            $itemPrice = Products::where('id', $idItem)->value('price');
+            $itemPrice = Products::where('id', $idItem)->value("price");
+            if ($itemPrice == null)
+            {
+                return ["total_quantity" => $totalQuantity, "total_price" => $totalPrice, "status" => true];
+            }
             $totalPrice = $totalPrice + ($itemPrice * $item['quantity']);
             $totalQuantity = $totalQuantity + $item['quantity'];
 
@@ -47,6 +51,6 @@ class OrderItemController extends Controller
             $saveOrderItem->save();
         }
 
-        return ["total_quantity" => $totalQuantity, "total_price" => $totalPrice];
+        return ["total_quantity" => $totalQuantity, "total_price" => $totalPrice, "status" => true];
     }
 }

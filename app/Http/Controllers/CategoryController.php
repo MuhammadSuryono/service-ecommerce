@@ -23,6 +23,13 @@ class CategoryController extends Controller
         $this->request = $request;
     }
 
+    public function getById($id)
+    {
+        $category = Category::find($id);
+
+        return $this->BuildResponse(true, "Success retrieve data by category", $category, 200);
+    }
+
     /***
      * @return \Illuminate\Http\JsonResponse
      */

@@ -47,11 +47,12 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->post('order/push', 'OrderController@insert');
     $router->get('order', 'OrderController@getAll');
     $router->get('order/{id}', 'OrderController@getById');
-    $router->get('order/user', 'OrderController@GetOrderByUserId');
+    $router->get('order/by/user', 'OrderController@GetOrderByUserId');
 
     // category route
     $router->get('category', 'CategoryController@getAll');
     $router->post('category', 'CategoryController@create');
+    $router->get('category/{id}', 'CategoryController@getById');
     $router->post('category/update', 'CategoryController@update');
     $router->post('category/delete', 'CategoryController@delete');
 
@@ -69,5 +70,10 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->get('transactions', 'TransactionController@getAll');
     $router->get('transactions/{id}', 'TransactionController@getById');
     $router->post('transactions/midtrans/push', 'TransactionController@notif');
+
+    $router->get('ongkir/province', 'RajaOngkir\RajaOngkirController@GetProvince');
+    $router->get('ongkir/city', 'RajaOngkir\RajaOngkirController@GetCity');
+    $router->post('ongkir/cost', 'RajaOngkir\RajaOngkirController@GetCost');
+
 
 });

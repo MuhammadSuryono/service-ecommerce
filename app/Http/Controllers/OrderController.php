@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Customers;
@@ -30,7 +31,7 @@ class OrderController extends Controller
      */
     public function getAll()
     {
-        $data = Orders::all();
+        $data = Orders::join('users', 'orders.user_id', '=', 'users.id')->select('orders.*', 'users.fullname')->get();
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
 
@@ -40,11 +41,10 @@ class OrderController extends Controller
      */
     public function getById($id)
     {
-        $data = Orders::find($id);
-        if(!$data)
-        {
-            return response()->json(["messages"=>"failed retrieve data","status" => false,"data"=> $data], 404);
-        }
+        $order = Orders::find($id);
+        $users = User::find($order->user_id);
+        $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*')->where('order_items.order_id', $order->order_id)->get();
+        $data = ["order" => $order, "user" => $users, "product" => $product];
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
 
@@ -74,7 +74,7 @@ class OrderController extends Controller
 
         $items = new OrderItemController($this->request);
         $input = $items->createOrderItems($this->request->input('data'), $order_id);
-
+        if (!$input['status']) return $this->BuildResponse(false, "Error when cerate new order", $this->request->all(), 400);
         $order = new Orders();
         $order->user_id = $id_user;
         $order->order_id = $order_id;
