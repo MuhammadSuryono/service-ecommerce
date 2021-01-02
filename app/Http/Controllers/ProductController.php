@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Products;
 use App\Orders;
+use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
@@ -29,7 +30,7 @@ class ProductController extends Controller
      */
     public function getAll()
     {
-        $data = Products::join('categories', 'products.category_id', '=', 'categories.id')->get();
+        $data = Products::join('categories', 'products.category_id', '=', 'categories.id')->select(DB::raw('products.*, categories.category_name'))->get();
         return $this->BuildResponse(true, "success retrieve data", $data, 200);
     }
 
