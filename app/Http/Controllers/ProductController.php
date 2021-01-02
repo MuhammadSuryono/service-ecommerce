@@ -2,7 +2,7 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Category;
+use App\Category;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Products;
@@ -68,21 +68,23 @@ class ProductController extends Controller
      */
     public function insert()
     {
+        Log::info(json_encode($this->request->all()));
         $this->validate($this->request,
         [
             'item_name' => 'required',
             'item_code' => 'required',
             'category_id' => 'required',
             'stock' => 'required',
+            'price' => 'required',
+            'unit' => 'required',
+            'weight' => 'required',
         ]);
 
-        $check = Products::where('item_code');
+        $check = Products::where('item_code', $this->request->input('item_code'));
         if ($check->exists())
         {
             return $this->BuildResponse(false, "Item code is exists", $check->first(), 400);
         }
-
-        $image = $this->request->file('image');
 
         $product = new Products();
         $product->item_name = $this->request->input('item_name');
@@ -90,17 +92,11 @@ class ProductController extends Controller
         $product->category_id = $this->request->input('category_id');
         $product->stock = $this->request->input('stock');
         $product->color = $this->request->input('color');
-        $product->item_size = $this->request->input('size');
+        $product->unit = $this->request->input('unit');
+        $product->weight = $this->request->input('weight');
+        $product->price = $this->request->input('price');
         $product->description = $this->request->input('description');
-        $product->image = '-';
-
-        if (!empty($image))
-        {
-            $imageName = time()."-".$image->getClientOriginalName();
-            $destination = storage_path('/app/images');
-            $image->move($destination, $imageName);
-            $product->image = $imageName;
-        }
+        $product->image = $this->request->input('images');
 
         $product->save();
         return $this->BuildResponse(true, "Create product is success", $this->request->all(), 200);

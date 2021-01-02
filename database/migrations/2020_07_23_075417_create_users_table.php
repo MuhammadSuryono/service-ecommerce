@@ -20,12 +20,12 @@ class CreateUsersTable extends Migration
             $table->string('username');
             $table->string('password');
             $table->string('no_npwp')->unique();
-            $table->string('npwp');
-            $table->string('address');
-            $table->string("phone_number");
-            $table->string("scope");
-            $table->string("no_ktp")->unique();
-            $table->string('ktp');
+            $table->string('npwp')->nullable();
+            $table->string('address')->nullable();
+            $table->string("phone_number")->nullable();
+            $table->string("scope")->nullable();
+            $table->string("no_ktp")->nullable();
+            $table->string('ktp')->nullable();
             $table->timestamps();
         });
     }

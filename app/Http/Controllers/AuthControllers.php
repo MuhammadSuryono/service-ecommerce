@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 
 
 use App\User;
-use http\Env\Request;
+use Illuminate\Http\Request;
 use Firebase\JWT\JWT;
 use Illuminate\Support\Facades\Hash;
 
@@ -41,18 +41,24 @@ class AuthControllers extends Controller
     /***
      * @param User $user
      * @return \Illuminate\Http\JsonResponse
+     * @throws \Illuminate\Validation\ValidationException
      */
     public function authLogin(User $user)
     {
-        $user = User::where('email', $this->request->input('email'))->first();
+//        $this->validate($this->request, [
+//           'username' => 'required',
+//           'password' => 'password',
+//        ]);
+
+        $user = User::where('username', $this->request->input('username'))->first();
         if (!$user)
         {
-            return $this->BuildResponse(false, "Email not found", $user, 404);
+            return $this->BuildResponse(false, "Username not found", $user, 404);
         }
 
-        if (Hash::check($this->request->input('password'), $user->password))
+        if ($this->request->input('password') == $user->password)
         {
-            return $this->BuildResponse(true, "Login success", $this->jwt($user), 200);
+            return $this->BuildResponse(true, "Login success", $user, 200);
         }
 
         return $this->BuildResponse(false, "Password is wrong", $user, 400);

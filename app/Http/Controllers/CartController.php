@@ -33,11 +33,16 @@ class CartController extends Controller
         $this->validate($this->request, [
             'id_user' => 'required',
             'id_product' => 'required',
+            'quantity' => 'required',
+            'item_price' => 'required'
         ]);
 
         $cart = new Cart();
         $cart->id_user = $this->request->input('id_user');
-        $cart->id_product = $this->request->input('id_product');
+        $cart->product_id = $this->request->input('id_product');
+        $cart->quantity = $this->request->input('quantity');
+        $cart->item_price = $this->request->input('item_price');
+
         $cart->save();
         return $this->BuildResponse(true, "Success add to cart", $this->request->all(), 200);
     }
@@ -52,5 +57,12 @@ class CartController extends Controller
         $cart->delete();
 
         return $this->BuildResponse(true, "Remove product success", $id, 200);
+    }
+
+    public function getCartByUser($userId)
+    {
+        $cart = Cart::where("id_user", $userId)->get();
+
+        return $this->BuildResponse(true, "Cart product success", $userId, 200);
     }
 }

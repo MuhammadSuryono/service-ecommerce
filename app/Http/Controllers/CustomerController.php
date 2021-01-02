@@ -53,24 +53,25 @@ class CustomerController extends Controller
            'fullname' => 'required',
            'email' => 'required',
            'npwp' => 'required',
-           'address' => 'required',
-           'nohp' => 'required',
            'username' => 'required',
            'password' => 'required',
         ]);
 
+        $email = User::where("email", $request->input("email"));
+        if ($email->exists()) return $this->BuildResponse(false, "Email is register!", $request->all(), 400);
+
         $customer = new User();
         $customer->fullname = $request->input('fullname');
-        $customer->npwp = $request->input('npwp');
-        $customer->address = $request->input('address');
+        $customer->no_npwp = $request->input('npwp');
+        $customer->address = "-";
         $customer->email = $request->input('email');
-        $customer->phone_number = $request->input('nohp');
+        $customer->phone_number = "0";
         $customer->username = $request->input('username');
         $customer->password = $request->input('password');
-        $customer->ktp = $request->input('ktp');
 
         if ($customer->save())
         {
+            $request->request->add(["id_user" => $customer->id]);
             return $this->BuildResponse(true, "Success register!", $request->all(), 200);
         }
 

@@ -15,21 +15,7 @@ $router->get('/', function () use ($router) {
     return $router->app->version();
 });
 
-$router->get('storage/images/{filename}', function ($filename) use ($router)
-{
-    $path = storage_path('app/images/' . $filename);
-    if (!File::exists($path)) {
-        abort(404);
-    }
-
-    $file = File::get($path);
-    $type = File::mimeType($path);
-
-    $response = Response::make($file, 200);
-    $response->header("Content-Type", $type);
-
-    return $response;
-});
+$router->get('storage/images/{filename}', 'CustomerController@getAll');
 
 
 $router->post('notif', 'TransactionController@notif');
@@ -37,6 +23,7 @@ $router->post('notif', 'TransactionController@notif');
 $router->group(['prefix'=>'api/v1'], function() use ($router)
 {
     // Customer Route
+    $router->post('auth/login', 'AuthControllers@authLogin');
     $router->post('customer/register', 'CustomerController@register');
     $router->put('customer/{id}', 'CustomerController@update');
     $router->delete('customer/{id}', 'CustomerController@delete');
