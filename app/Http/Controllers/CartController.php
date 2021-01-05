@@ -6,6 +6,8 @@ namespace App\Http\Controllers;
 
 use App\Cart;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 
 class CartController extends Controller
@@ -38,7 +40,7 @@ class CartController extends Controller
         ]);
 
         $cart = new Cart();
-        $cart->id_user = $this->request->input('id_user');
+        $cart->user_id = $this->request->input('id_user');
         $cart->product_id = $this->request->input('id_product');
         $cart->quantity = $this->request->input('quantity');
         $cart->item_price = $this->request->input('item_price');
@@ -59,10 +61,33 @@ class CartController extends Controller
         return $this->BuildResponse(true, "Remove product success", $id, 200);
     }
 
+    /***
+     * @param $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function getCartByUser($userId)
     {
-        $cart = Cart::where("id_user", $userId)->get();
+        $cart = Cart::join('products', 'cart.product_id', '=', 'products.id')->select(DB::raw('cart.*, products.item_name as item_name, products.item_code as item_code, products.image as image, products.price as price'))->where("cart.user_id", $userId)->where("cart.status", 'cart')->get();
 
-        return $this->BuildResponse(true, "Cart product success", $userId, 200);
+        return $this->BuildResponse(true, "Cart product success", $cart, 200);
+    }
+
+    /***
+     * @param $id
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function updateQty($id)
+    {
+        $cart = Cart::find($id);
+        $item_price = $cart->item_price;
+        $cart->quantity = $this->request->input('quantity');
+
+        if ($cart->update()){
+            $userId = $this->request->input('id_user');
+            $totalUpdate = $item_price*$this->request->input('quantity');
+            $grandTotal = Cart::select(DB::raw('sum(cart.quantity) as totalQuantity, sum(cart.item_price) as totalPrice'))->where("cart.user_id", $userId)->where("cart.status", 'cart')->first();
+            return $this->BuildResponse(true, "Cart product update success", ["total" => $totalUpdate, "grand_total" => $grandTotal], 200);
+        }
+        return $this->BuildResponse(false, "Cart product update failed", [], 200);
     }
 }

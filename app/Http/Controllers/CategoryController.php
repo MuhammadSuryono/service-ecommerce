@@ -91,13 +91,8 @@ class CategoryController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function delete()
+    public function delete($id)
     {
-        $this->validate($this->request, [
-            'id' => 'required',
-        ]);
-
-        $id = $this->request->input('id');
         $category = Category::find($id);
 
         if (!$category)

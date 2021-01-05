@@ -41,7 +41,7 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->post('category', 'CategoryController@create');
     $router->get('category/{id}', 'CategoryController@getById');
     $router->post('category/update', 'CategoryController@update');
-    $router->post('category/delete', 'CategoryController@delete');
+    $router->post('category/{id}', 'CategoryController@delete');
 
 
     // Product Route
@@ -62,5 +62,7 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->get('ongkir/city', 'RajaOngkir\RajaOngkirController@GetCity');
     $router->post('ongkir/cost', 'RajaOngkir\RajaOngkirController@GetCost');
 
-
+    $router->get('cart/{userId}', 'CartController@getCartByUser');
+    $router->post('cart', 'CartController@addCart');
+    $router->put('cart/{id}', 'CartController@updateQty');
 });
