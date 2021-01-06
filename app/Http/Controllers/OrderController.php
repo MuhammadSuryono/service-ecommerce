@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Cart;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -83,7 +84,9 @@ class OrderController extends Controller
         $order->order_status = "Waiting Payment";
         $order->save();
 
-        return $this->BuildResponse(true, "Success create new order", $this->request->all(), 200);
+        Cart::where('user_id', $id_user)->update(["status" => "checkout"]);
+
+        return $this->BuildResponse(true, "Success create new order", ["order_id" => $order_id, "data" => $this->request->all()], 200);
     }
 
     /***

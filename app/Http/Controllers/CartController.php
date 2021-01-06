@@ -73,6 +73,17 @@ class CartController extends Controller
     }
 
     /***
+     * @param $userId
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function getCartByCheckout($userId)
+    {
+        $cart = Cart::join('products', 'cart.product_id', '=', 'products.id')->select(DB::raw('cart.*, products.item_name as item_name, products.item_code as item_code, products.image as image, products.price as price'))->where("cart.user_id", $userId)->where("cart.status", 'checkout')->get();
+
+        return $this->BuildResponse(true, "Cart product success", $cart, 200);
+    }
+
+    /***
      * @param $id
      * @return \Illuminate\Http\JsonResponse
      */

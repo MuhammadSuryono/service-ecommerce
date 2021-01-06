@@ -21,6 +21,8 @@ class CreateShipperTable extends Migration
             $table->string("contact");
             $table->string("order_notes");
             $table->string("destination");
+            $table->integer("cost");
+            $table->integer("destination_id");
             $table->timestamps();
         });
     }

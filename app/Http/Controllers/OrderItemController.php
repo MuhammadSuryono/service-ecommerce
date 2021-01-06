@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\OrderItems;
 use App\Products;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class OrderItemController extends Controller
 {
@@ -33,6 +34,7 @@ class OrderItemController extends Controller
         $totalPrice = 0;
         foreach ($data as $item)
         {
+            Log::info($item);
             $idItem = $item['id_item'];
             $itemPrice = Products::where('id', $idItem)->value("price");
             if ($itemPrice == null)

@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Cart;
+use App\Shipper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Transactions;
@@ -54,7 +56,9 @@ class TransactionController extends Controller
         $this->validate($this->request, [
             "order_id" => 'required',
             "payment_metode" => 'required',
+            "receipt_man" => 'required',
         ]);
+
 
         $order_id = $this->request->input("order_id");
         $payment = $this->request->input("payment_metode");
@@ -93,26 +97,28 @@ class TransactionController extends Controller
         $body = $this->BodyMidtrans("bank_transfer", ["gross_amount" => $dataOrder->total_price, "order_id" => $order_id], ["bank"=> "bni"]);
         $header = $this->GenerateHeaderMidtrans();
 
-//        $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", ['Authorization: '.$header]);
-        $response = '{"status_code":"201","status_message":"Success, Bank Transfer transaction is created","transaction_id":"1bfcbb4f-6177-4400-9736-8d5782ef4ff1","order_id":"1608820297","merchant_id":"G101348486","gross_amount":"300.00","currency":"IDR","payment_type":"bank_transfer","transaction_time":"2020-12-24 22:02:57","transaction_status":"pending","va_numbers":[{"bank":"bni","va_number":"9884848686348514"}],"fraud_status":"accept"}';
-        $req = json_decode($response);
+        $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", ['Authorization: '.$header]);
+//        $response = '{"status_code":"201","status_message":"Success, Bank Transfer transaction is created","transaction_id":"1bfcbb4f-6177-4400-9736-8d5782ef4ff1","order_id":"1608820297","merchant_id":"G101348486","gross_amount":"300.00","currency":"IDR","payment_type":"bank_transfer","transaction_time":"2020-12-24 22:02:57","transaction_status":"pending","va_numbers":[{"bank":"bni","va_number":"9884848686348514"}],"fraud_status":"accept"}';
+//        $req = json_decode($response);
         if ($req->status_code == "201")
         {
-//            $transactionId = time();
-//            $saveTransaction = new Transactions();
-//            $saveTransaction->order_id = $order_id;
-//            $saveTransaction->transaction_id = $transactionId;
-//            $saveTransaction->payment_type = "bank_transfer";
-//            $saveTransaction->total = $dataOrder->total_price;
-//            $saveTransaction->time_create_payment = $req->transaction_time;
-//            $saveTransaction->transaction_status = $req->transaction_status;
-//            $saveTransaction->transaction_time = "-";
-//            $saveTransaction->detail_transactions = $response;
-//            $saveTransaction->save();
-            return $this->BuildResponse(true, "Transaction success create", ["body" =>$body, "response" => $response], 200);
+            $transactionId = time();
+            $saveTransaction = new Transactions();
+            $saveTransaction->order_id = $order_id;
+            $saveTransaction->transaction_id = $transactionId;
+            $saveTransaction->payment_type = "bank_transfer";
+            $saveTransaction->total = $dataOrder->total_price;
+            $saveTransaction->time_create_payment = $req->transaction_time;
+            $saveTransaction->transaction_status = $req->transaction_status;
+            $saveTransaction->transaction_time = "-";
+            $saveTransaction->detail_transactions = json_encode($req);
+            $saveTransaction->save();
+            Cart::where('user_id', $dataOrder->user_id)->where('status', "checkout")->update(["status" => "on_transaction"]);
+            $this->InsertReciptMan($this->request->input('receipt_man'));
+            return $this->BuildResponse(true, "Transaction success create", ["body" =>$body, "response" => $req], 200);
         }
 
-        return $this->BuildResponse(true, "Failed create transactions", $body, 200);
+        return $this->BuildResponse(false, "Failed create transactions", $body, 200);
 
     }
 
@@ -140,5 +146,21 @@ class TransactionController extends Controller
         $update->update($data);
 
         return true;
+    }
+
+    public function InsertReciptMan($data)
+    {
+        Log::info($data);
+        $ship = new Shipper();
+        $ship->id_order = $data['order_id'];
+        $ship->recipents_name = $data['penerima'];
+        $ship->address = $data['address'];
+        $ship->contact = $data['contact'];
+        $ship->order_notes = $data['notes'];
+        $ship->destination = $data['destination'];
+//        $ship->destination_id = $data->destination_id;
+//        $ship->cost = $data->cost;
+
+        $ship->save();
     }
 }
