@@ -65,4 +65,6 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->get('cart/{userId}', 'CartController@getCartByUser');
     $router->post('cart', 'CartController@addCart');
     $router->put('cart/{id}', 'CartController@updateQty');
+    $router->delete('cart/{id}', 'CartController@removeCart');
+
 });
