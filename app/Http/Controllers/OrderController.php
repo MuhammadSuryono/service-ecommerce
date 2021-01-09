@@ -81,10 +81,10 @@ class OrderController extends Controller
         $order->order_id = $order_id;
         $order->total_quantity = $input['total_quantity'];
         $order->total_price = $input['total_price'];
-        $order->order_status = "Waiting Payment";
+        $order->order_status = "create_on_transaction";
         $order->save();
 
-        Cart::where('user_id', $id_user)->update(["status" => "checkout"]);
+        Cart::where('user_id', $id_user)->where("status", "cart")->update(["status" => "checkout"]);
 
         return $this->BuildResponse(true, "Success create new order", ["order_id" => $order_id, "data" => $this->request->all()], 200);
     }
@@ -117,5 +117,15 @@ class OrderController extends Controller
     {
         return Orders::where("order_id", $order_id)->first();
     }
-
+	
+	/***
+	* 
+	* 
+	*/
+	public function GetOrder($order_id)
+	{
+		$data = Orders::where("order_id", $order_id)->get();
+		
+		return $this->BuildResponse(true, "Success get data order", $data, 200);
+	}
 }

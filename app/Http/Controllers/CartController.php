@@ -38,6 +38,13 @@ class CartController extends Controller
             'quantity' => 'required',
             'item_price' => 'required'
         ]);
+		
+		$check = Cart::where('product_id', $this->request->input('id_product'))->where('user_id', $this->request->input('id_user'))->where('status', 'cart');
+		if ($check->exists()) {
+			$data = ["quantity" => $this->request->input('quantity') + $check->first()->quantity ];
+			$check->update($data);
+			return $this->BuildResponse(true, "Success update quantity to cart " ,  $this->request->all(), 200);
+		}
 
         $cart = new Cart();
         $cart->user_id = $this->request->input('id_user');
@@ -78,7 +85,7 @@ class CartController extends Controller
      */
     public function getCartByCheckout($userId)
     {
-        $cart = Cart::join('products', 'cart.product_id', '=', 'products.id')->select(DB::raw('cart.*, products.item_name as item_name, products.item_code as item_code, products.image as image, products.price as price'))->where("cart.user_id", $userId)->where("cart.status", 'checkout')->get();
+        $cart = Cart::join('products', 'cart.product_id', '=', 'products.id')->select(DB::raw('cart.*, products.item_name as item_name, products.item_code as item_code, products.image as image, products.price as price, products.weight as weight'))->where("cart.user_id", $userId)->where("cart.status", 'checkout')->get();
 
         return $this->BuildResponse(true, "Cart product success", $cart, 200);
     }
@@ -92,8 +99,11 @@ class CartController extends Controller
         $cart = Cart::find($id);
         $item_price = $cart->item_price;
         $cart->quantity = $this->request->input('quantity');
-
+		
+		Log::info($this->request->input('quantity'));
+		
         if ($cart->update()){
+			Log::info("SUcces di tambahkan");
             $userId = $this->request->input('id_user');
             $totalUpdate = $item_price*$this->request->input('quantity');
             $grandTotal = Cart::select(DB::raw('sum(cart.quantity) as totalQuantity, sum(cart.item_price) as totalPrice'))->where("cart.user_id", $userId)->where("cart.status", 'cart')->first();

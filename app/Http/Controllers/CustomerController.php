@@ -72,6 +72,7 @@ class CustomerController extends Controller
         if ($customer->save())
         {
             $request->request->add(["id_user" => $customer->id]);
+			Log::info(json_encode($request->all()));
             return $this->BuildResponse(true, "Success register!", $request->all(), 200);
         }
 

@@ -47,6 +47,7 @@ class CategoryController extends Controller
     {
         $this->validate($this->request, [
            'category_name' => 'required',
+		   'category_image' => 'required',
         ]);
 
         $category = Category::where('category_name', $this->request->input('category_name'));
@@ -57,6 +58,7 @@ class CategoryController extends Controller
 
         $category = new Category();
         $category->category_name = $this->request->input('category_name');
+		$category->category_image = $this->request->input('category_image');
         $category->save();
 
         return $this->BuildResponse(true, "Create category success", $this->request->input('category_name'), 200);

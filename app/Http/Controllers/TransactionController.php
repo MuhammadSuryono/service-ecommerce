@@ -94,7 +94,7 @@ class TransactionController extends Controller
         //    "fraud_status": "accept"
         //}
 
-        $body = $this->BodyMidtrans("bank_transfer", ["gross_amount" => $dataOrder->total_price, "order_id" => $order_id], ["bank"=> "bni"]);
+        $body = $this->BodyMidtrans("bank_transfer", ["gross_amount" => $dataOrder->total_price + $this->request->input('receipt_man')['cost'], "order_id" => $order_id], ["bank"=> "bni"]);
         $header = $this->GenerateHeaderMidtrans();
 
         $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", ['Authorization: '.$header]);
@@ -107,15 +107,16 @@ class TransactionController extends Controller
             $saveTransaction->order_id = $order_id;
             $saveTransaction->transaction_id = $transactionId;
             $saveTransaction->payment_type = "bank_transfer";
-            $saveTransaction->total = $dataOrder->total_price;
+            $saveTransaction->total = $dataOrder->total_price + $this->request->input('receipt_man')['cost'];
             $saveTransaction->time_create_payment = $req->transaction_time;
             $saveTransaction->transaction_status = $req->transaction_status;
             $saveTransaction->transaction_time = "-";
             $saveTransaction->detail_transactions = json_encode($req);
             $saveTransaction->save();
+			Orders::where("order_id", $order_id)->where("order_status", "create_on_transaction")->update(["order_status" =>"waiting_payment"]);
             Cart::where('user_id', $dataOrder->user_id)->where('status', "checkout")->update(["status" => "on_transaction"]);
             $this->InsertReciptMan($this->request->input('receipt_man'));
-            return $this->BuildResponse(true, "Transaction success create", ["body" =>$body, "response" => $req], 200);
+            return $this->BuildResponse(true, "Transaction success create", ["body" =>$body, "transaction_id" => $transactionId, "va_number" => $req->va_numbers[0]->va_number], 200);
         }
 
         return $this->BuildResponse(false, "Failed create transactions", $body, 200);
@@ -124,12 +125,24 @@ class TransactionController extends Controller
 
     public function notif(Request $request)
     {
+		Log::info(json_encode($request->all()));
         $pay = Transactions::where('order_id', $request->input('order_id'))->first();
         // return $pay;
         if(!$pay)
         {
             return response()->json(["messages"=> "Id order not found","status"=>false], 400);
         }
+		if (!$request->input('settlement_time') || $request->input('settlement_time') == "") {
+			$pays = Transactions::find($pay->id);
+			$pays->transaction_time = $request->input('transaction_time');
+			$pays->transaction_status = $request->input('transaction_status');
+			if($pays->save())
+			{
+				return response()->json(["messages"=> "Perubahan transsaksi"], 200);
+			}
+		}
+		
+		
         $pays = Transactions::find($pay->id);
         $pays->transaction_time = $request->input('settlement_time');
         $pays->transaction_status = $request->input('transaction_status');
@@ -158,8 +171,8 @@ class TransactionController extends Controller
         $ship->contact = $data['contact'];
         $ship->order_notes = $data['notes'];
         $ship->destination = $data['destination'];
-//        $ship->destination_id = $data->destination_id;
-//        $ship->cost = $data->cost;
+        $ship->destination_id = $data['destination_id'];
+        $ship->cost = $data['cost'];
 
         $ship->save();
     }
