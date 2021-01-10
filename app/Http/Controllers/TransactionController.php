@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Cart;
 use App\Shipper;
+use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Transactions;
@@ -50,6 +51,19 @@ class TransactionController extends Controller
         Log::info("Get data Transactions $data->full_name");
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
+	
+	public function getByOrderId($orderId)
+	{
+		$data = Transactions::where("order_id", $orderId)->first();
+		$users = User::find($data->user_id);
+        $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*', 'order_items.quantity as qty')->where('order_items.order_id', $orderId)->get();
+		$shipper = Shipper::where("id_order", $orderId)->first();
+		$data->user = $users;
+		$data->products = $product;
+		$data->shipper = $shipper;
+		
+		return $this->BuildResponse(true, "Retrieve transaction success", $data, 200);
+	}
 
     public function create()
     {

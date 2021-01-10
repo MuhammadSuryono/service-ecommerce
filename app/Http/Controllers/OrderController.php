@@ -122,9 +122,13 @@ class OrderController extends Controller
 	* 
 	* 
 	*/
-	public function GetOrder($order_id)
+	public function GetOrder($orderId)
 	{
-		$data = Orders::where("order_id", $order_id)->get();
+		$data = Orders::where("order_id", $orderId)->first();
+        $users = User::find($data->user_id);
+        $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*', 'order_items.quantity as qty')->where('order_items.order_id', $orderId)->get();
+        $data = ["order" => $data, "user" => $users, "product" => $product];
+        return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
 		
 		return $this->BuildResponse(true, "Success get data order", $data, 200);
 	}
