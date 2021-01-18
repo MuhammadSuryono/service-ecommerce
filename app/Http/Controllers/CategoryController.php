@@ -77,11 +77,20 @@ class CategoryController extends Controller
 
         $id = $this->request->input('id');
         $category_name = $this->request->input('category_name');
+        $category_image = $this->request->input('category_image');
         $category = Category::find($id);
 
         if (!$category)
         {
             return $this->BuildResponse(false, "Category notfound!", $category, 404);
+        }
+
+        if ($category_image != null || $category_image != "")
+        {
+            $category->category_name = $category_name;
+            $category->category_image = $category_image;
+            $category->save();
+            return $this->BuildResponse(true, "Update category success!", $category, 200);
         }
 
         $category->category_name = $category_name;

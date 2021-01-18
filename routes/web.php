@@ -42,12 +42,12 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->post('category', 'CategoryController@create');
     $router->get('category/{id}', 'CategoryController@getById');
     $router->post('category/update', 'CategoryController@update');
-    $router->post('category/{id}', 'CategoryController@delete');
+    $router->delete('category/{id}', 'CategoryController@delete');
 
 
     // Product Route
     $router->post('product', 'ProductController@insert');
-    $router->put('product', 'ProductController@update');
+    $router->post('product/{id}', 'ProductController@update');
     $router->delete('product/{id}', 'ProductController@delete');
     $router->get('product', 'ProductController@getAll');
     $router->get('product/category', 'ProductController@getProductByCategory');
@@ -70,4 +70,5 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->delete('cart/{id}', 'CartController@removeCart');
     $router->get('cart/checkout/{userId}', 'CartController@getCartByCheckout');
 
+    $router->get('report', 'ReportController@getReport');
 });

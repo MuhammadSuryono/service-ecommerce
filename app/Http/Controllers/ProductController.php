@@ -107,17 +107,8 @@ class ProductController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * @throws \Illuminate\Validation\ValidationException
      */
-    public function update()
+    public function update($id)
     {
-        $this->validate($this->request, [
-            'id' => 'required',
-            'item_name' => 'required',
-            'category_id' => 'required',
-            'stock' => 'required',
-            'selection_stock' => 'required',
-        ]);
-
-        $id = $this->request->input('id');
         $product = Products::find($id);
         if(!$product)
         {
@@ -125,17 +116,16 @@ class ProductController extends Controller
             return response()->json(["message"=>"failed retrieve data","status" => false,"data"=> ''], 404);
         }
 
-        $stock = $this->request->input('stock');
-        if ($this->request->input('selection_stock') == 'penambahan')
-        {
-            $stock = $product->stock + $stock;
-        }
         $product->item_name = $this->request->input('item_name');
+        $product->item_code = $this->request->input('item_code');
         $product->category_id = $this->request->input('category_id');
-        $product->stock = $stock;
+        $product->stock = $this->request->input('stock');
         $product->color = $this->request->input('color');
-        $product->item_size = $this->request->input('size');
+        $product->unit = $this->request->input('unit');
+        $product->weight = $this->request->input('weight');
+        $product->price = $this->request->input('price');
         $product->description = $this->request->input('description');
+        if ($this->request->input('images') != null || $this->request->input('images') != "") $product->image = $this->request->input('images');
 
         $product->save();
         return $this->BuildResponse(true, "Update product is success", $this->request->all(), 200);
