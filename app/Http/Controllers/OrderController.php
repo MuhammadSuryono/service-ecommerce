@@ -105,8 +105,13 @@ class OrderController extends Controller
             return $this->BuildResponse(false, "User notfound!", [], 404);
         }
 
-        $order = Orders::where("user_id", $this->request->input('user_id'))->get();
-        return $this->BuildResponse(true, "Success get data order", $order, 200);
+        $orders = Orders::where("user_id", $this->request->input('user_id'))->get();
+        foreach ($orders as $order) {
+            $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.item_code','products.item_name', 'order_items.item_price', 'order_items.quantity', 'products.image')->where('order_items.order_id', $order->order_id)->get();
+            $order->product_orders = $product;
+        }
+
+        return $this->BuildResponse(true, "Success get data order", $orders, 200);
     }
 
     /***
@@ -117,11 +122,11 @@ class OrderController extends Controller
     {
         return Orders::where("order_id", $order_id)->first();
     }
-	
-	/***
-	* 
-	* 
-	*/
+
+    /***
+     * @param $orderId
+     * @return \Illuminate\Http\JsonResponse
+     */
 	public function GetOrder($orderId)
 	{
 		$data = Orders::where("order_id", $orderId)->first();
@@ -129,7 +134,15 @@ class OrderController extends Controller
         $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*', 'order_items.quantity as qty')->where('order_items.order_id', $orderId)->get();
         $data = ["order" => $data, "user" => $users, "product" => $product];
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
-		
+
 		return $this->BuildResponse(true, "Success get data order", $data, 200);
 	}
+
+	public function CancelOrder($orderId)
+    {
+        $order = Orders::where("order_id", $orderId)->first();
+        $update = Orders::where("order_id", $orderId)->where("order_status", $order->order_status)->update(["order_status" =>"cancel_order"]);
+        if ($update) return $this->BuildResponse(true, "Cancel order success", $order, 200);
+        return $this->BuildResponse(false, "Cancel order failed", $order, 400);
+    }
 }

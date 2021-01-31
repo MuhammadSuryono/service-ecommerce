@@ -8,7 +8,10 @@
         "php": "^7.2.5",
         "firebase/php-jwt": "^5.2",
         "fzaninotto/faker": "^1.9.1",
+        "guzzlehttp/guzzle": "^7.2",
+        "illuminate/mail": "7.x-dev",
         "laravel/lumen-framework": "^7.0",
+        "swiftmailer/swiftmailer": "^6.0",
         "tymon/jwt-auth": "^1.0"
     },
     "require-dev": {

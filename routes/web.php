@@ -34,8 +34,9 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->post('order/push', 'OrderController@insert');
     $router->get('order', 'OrderController@getAll');
     $router->get('order/{id}', 'OrderController@getById');
-    $router->get('order/by/user', 'OrderController@GetOrderByUserId');
+    $router->post('order/by-user', 'OrderController@GetOrderByUserId');
 	$router->get('order/order-id/{orderId}', 'OrderController@GetOrder');
+	$router->get('order/cancel/{orderId}', 'OrderController@CancelOrder');
 
     // category route
     $router->get('category', 'CategoryController@getAll');
@@ -69,6 +70,9 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->put('cart/{id}', 'CartController@updateQty');
     $router->delete('cart/{id}', 'CartController@removeCart');
     $router->get('cart/checkout/{userId}', 'CartController@getCartByCheckout');
+    $router->get('cart/transaction/{orderId}', 'CartController@getCartByOrderId');
 
     $router->get('report', 'ReportController@getReport');
+    $router->get('send_email' ,'SendEmail@mail');
+    $router->post('otp/validate', 'OtpController@ValidateOtp');
 });

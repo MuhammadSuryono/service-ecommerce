@@ -26,6 +26,7 @@ class CreateUsersTable extends Migration
             $table->string("scope")->nullable();
             $table->string("no_ktp")->nullable();
             $table->string('ktp')->nullable();
+            $table->boolean('is_register')->default(false);
             $table->timestamps();
         });
     }

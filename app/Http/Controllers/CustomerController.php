@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Otp;
 use App\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use App\Customers;
 use App\Orders;
@@ -72,7 +74,11 @@ class CustomerController extends Controller
         if ($customer->save())
         {
             $request->request->add(["id_user" => $customer->id]);
-			Log::info(json_encode($request->all()));
+
+            $codeOtp = $this->CreateOtp();
+
+            $this->SendEmail($request->input('email'), $request->input('fullname'), $codeOtp);
+
             return $this->BuildResponse(true, "Success register!", $request->all(), 200);
         }
 

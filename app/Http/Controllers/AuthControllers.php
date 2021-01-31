@@ -53,8 +53,10 @@ class AuthControllers extends Controller
         $user = User::where('username', $this->request->input('username'))->first();
         if (!$user)
         {
-            return $this->BuildResponse(false, "Username not found", $user, 404);
+            return $this->BuildResponse(false, "Username not found", null, 404);
         }
+
+        if ($user->is_register == false) return $this->BuildResponse(false, "Your account is not registerd!", null, 400);
 
         if ($this->request->input('password') == $user->password)
         {

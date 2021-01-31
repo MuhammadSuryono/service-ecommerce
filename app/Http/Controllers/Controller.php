@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Orders;
+use App\Otp;
 use App\User;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Mail;
 use Laravel\Lumen\Routing\Controller as BaseController;
 
 class Controller extends BaseController
@@ -211,4 +214,51 @@ class Controller extends BaseController
         return "https://api.rajaongkir.com/starter/";
     }
 
+    /***
+     * @param string $email
+     * @param string $fullname
+     * @param $code
+     * @return bool
+     */
+    public function SendEmail(string $email, string $fullname, $code)
+    {
+        $data = array('name' => $fullname, 'code' => $code, 'email' => $email);
+
+        $sending = Mail::send("mail", $data, function ($message) use ($data) {
+            $message->to($data['email'], $data['name'])->subject("Activation Code");
+            $message->from("bersatuindahgemilang@gmail.com","Bersatu Indah Gemilang");
+        });
+
+        if ($sending == null) return true;
+        else return false;
+
+    }
+
+    /***
+     * @return int
+     */
+    public function CreateOtp() {
+        $code = rand(1000, 9999);
+        $saveOtp = new Otp();
+        $saveOtp->otp = $code;
+        $saveOtp->is_expired = false;
+        $saveOtp->save();
+
+        return $code;
+    }
+
+    /***
+     * @param $code
+     * @return bool
+     */
+    public function CheckOtp($code)
+    {
+        $statusOtp = DB::table("otp")
+            ->whereRaw("otp = '".$code."' AND is_expired = '0' AND NOW() <= DATE_ADD(created_at, INTERVAL 24 HOUR)", [200])
+            ->get();
+
+        if (count($statusOtp) > 0) return true;
+
+        return false;
+    }
 }
