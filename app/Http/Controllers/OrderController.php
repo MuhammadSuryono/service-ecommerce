@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Cart;
+use App\Transactions;
 use App\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -109,6 +110,12 @@ class OrderController extends Controller
         foreach ($orders as $order) {
             $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.item_code','products.item_name', 'order_items.item_price', 'order_items.quantity', 'products.image')->where('order_items.order_id', $order->order_id)->get();
             $order->product_orders = $product;
+
+            $transaction = Transactions::join('shipper', 'transactions.order_id', '=', 'shipper.id_order')
+                ->select('transactions.transaction_id', 'transactions.payment_type', 'transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
+                ->where('transactions.order_id', $order->order_id)
+                ->first();
+            $order->transactions = $transaction;
         }
 
         return $this->BuildResponse(true, "Success get data order", $orders, 200);
@@ -132,7 +139,12 @@ class OrderController extends Controller
 		$data = Orders::where("order_id", $orderId)->first();
         $users = User::find($data->user_id);
         $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*', 'order_items.quantity as qty')->where('order_items.order_id', $orderId)->get();
-        $data = ["order" => $data, "user" => $users, "product" => $product];
+        $transactionDetails = Transactions::join('shipper', 'transactions.order_id', '=', 'shipper.id_order')
+            ->select('transactions.transaction_id', 'transactions.payment_type', 'transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
+            ->where('transactions.order_id', $orderId)
+            ->first();
+
+        $data = ["order" => $data, "user" => $users, "product" => $product, "transactions" => $transactionDetails];
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
 
 		return $this->BuildResponse(true, "Success get data order", $data, 200);
