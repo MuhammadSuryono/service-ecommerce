@@ -59,7 +59,7 @@ class CustomerController extends Controller
            'password' => 'required',
         ]);
 
-        $email = User::where("email", $request->input("email"));
+        $email = User::where("email", $request->input("email"))->where("is_register", true);
         if ($email->exists()) return $this->BuildResponse(false, "Email is register!", $request->all(), 400);
 
         $customer = new User();
