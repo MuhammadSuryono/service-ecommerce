@@ -38,13 +38,13 @@ class CartController extends Controller
             'quantity' => 'required',
             'item_price' => 'required'
         ]);
-		
-		$check = Cart::where('product_id', $this->request->input('id_product'))->where('user_id', $this->request->input('id_user'))->where('status', 'cart');
-		if ($check->exists()) {
-			$data = ["quantity" => $this->request->input('quantity') + $check->first()->quantity ];
-			$check->update($data);
-			return $this->BuildResponse(true, "Success update quantity to cart " ,  $this->request->all(), 200);
-		}
+
+        $check = Cart::where('product_id', $this->request->input('id_product'))->where('user_id', $this->request->input('id_user'))->where('status', 'cart');
+        if ($check->exists()) {
+            $data = ["quantity" => $this->request->input('quantity') + $check->first()->quantity];
+            $check->update($data);
+            return $this->BuildResponse(true, "Success update quantity to cart ",  $this->request->all(), 200);
+        }
 
         $cart = new Cart();
         $cart->user_id = $this->request->input('id_user');
@@ -99,15 +99,20 @@ class CartController extends Controller
         $cart = Cart::find($id);
         $item_price = $cart->item_price;
         $cart->quantity = $this->request->input('quantity');
-		
-		Log::info($this->request->input('quantity'));
-		
-        if ($cart->update()){
-			Log::info("SUcces di tambahkan");
+
+        Log::info($this->request->input('quantity'));
+
+        if ($cart->update()) {
+            Log::info("SUcces di tambahkan");
             $userId = $this->request->input('id_user');
-            $totalUpdate = $item_price*$this->request->input('quantity');
-            $grandTotal = Cart::select(DB::raw('sum(cart.quantity) as totalQuantity, sum(cart.item_price) as totalPrice'))->where("cart.user_id", $userId)->where("cart.status", 'cart')->first();
-            return $this->BuildResponse(true, "Cart product update success", ["total" => $totalUpdate, "grand_total" => $grandTotal], 200);
+            $totalUpdate = $item_price * $this->request->input('quantity');
+            $grandTotal = Cart::where("user_id", $userId)->where("status", 'cart')->get();
+
+            $total = 0;
+            foreach ($grandTotal as $value) {
+                $total = $total + ($value->item_price * $value->quantity);
+            }
+            return $this->BuildResponse(true, "Cart product update success", ["total" => $totalUpdate, "grand_total" => $total], 200);
         }
         return $this->BuildResponse(false, "Cart product update failed", [], 200);
     }
