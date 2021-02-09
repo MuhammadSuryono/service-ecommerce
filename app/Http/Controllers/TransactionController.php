@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Cart;
+use App\Products;
 use App\Shipper;
 use App\User;
 use Illuminate\Http\Request;
@@ -51,7 +52,7 @@ class TransactionController extends Controller
         Log::info("Get data Transactions $data->full_name");
         return response()->json(["messages"=>"success retrieve data","status" => true,"data"=> $data], 200);
     }
-	
+
 	public function getByOrderId($orderId)
 	{
 		$data = Transactions::where("order_id", $orderId)->first();
@@ -61,7 +62,7 @@ class TransactionController extends Controller
 		$data->user = $users;
 		$data->products = $product;
 		$data->shipper = $shipper;
-		
+
 		return $this->BuildResponse(true, "Retrieve transaction success", $data, 200);
 	}
 
@@ -150,18 +151,28 @@ class TransactionController extends Controller
 			$pays = Transactions::find($pay->id);
 			$pays->transaction_time = $request->input('transaction_time');
 			$pays->transaction_status = $request->input('transaction_status');
+
+			$getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
+			foreach ($getOrderItem as $orderItem) {
+			    $this->updateStock($orderItem->product_id, $orderItem->quantity);
+            }
+
 			if($pays->save())
 			{
 				return response()->json(["messages"=> "Perubahan transsaksi"], 200);
 			}
 		}
-		
-		
+
+
         $pays = Transactions::find($pay->id);
         $pays->transaction_time = $request->input('settlement_time');
         $pays->transaction_status = $request->input('transaction_status');
         if($pays->save())
         {
+            $getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
+            foreach ($getOrderItem as $orderItem) {
+                $this->updateStock($orderItem->product_id, $orderItem->quantity);
+            }
             return response()->json(["messages"=> "Perubahan transaksi"], 200);
         }
 
@@ -189,5 +200,13 @@ class TransactionController extends Controller
         $ship->cost = $data['cost'];
 
         $ship->save();
+    }
+
+    public function updateStock($idProduct, $qty)
+    {
+        $product = Products::find($idProduct);
+        $product->stock = $product->stock - $qty;
+        if ($product->stock < 0) $product->stock = 0;
+        $product->save();
     }
 }

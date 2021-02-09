@@ -154,7 +154,15 @@ class OrderController extends Controller
     {
         $order = Orders::where("order_id", $orderId)->first();
         $update = Orders::where("order_id", $orderId)->where("order_status", $order->order_status)->update(["order_status" =>"cancel_order"]);
-        if ($update) return $this->BuildResponse(true, "Cancel order success", $order, 200);
+        $updateTransaksi = Transactions::where("order_id", $orderId);
+        if ($update && $updateTransaksi->exists()) {
+            $updateTransaksi->update(["transaction_status" =>"cancel_order"]);
+            return $this->BuildResponse(true, "Cancel order success", $order, 200);
+        }
+
+        if ($update) {
+            return $this->BuildResponse(true, "Cancel order success", $order, 200);
+        }
         return $this->BuildResponse(false, "Cancel order failed", $order, 400);
     }
 }
