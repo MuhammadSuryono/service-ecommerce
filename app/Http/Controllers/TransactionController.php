@@ -87,34 +87,10 @@ class TransactionController extends Controller
         $order = new OrderController($this->request);
         $dataOrder = $order->GetOrderByOrderId($order_id);
 
-
-
-        // {
-        //    "status_code": "201",
-        //    "status_message": "Success, Bank Transfer transaction is created",
-        //    "transaction_id": "68449366-15da-46a5-909b-28150e6ec841",
-        //    "order_id": "IOKN-8898999",
-        //    "merchant_id": "G101348486",
-        //    "gross_amount": "190000.00",
-        //    "currency": "IDR",
-        //    "payment_type": "bank_transfer",
-        //    "transaction_time": "2020-12-21 08:02:53",
-        //    "transaction_status": "pending",
-        //    "va_numbers": [
-        //        {
-        //            "bank": "bni",
-        //            "va_number": "9884848613556429"
-        //        }
-        //    ],
-        //    "fraud_status": "accept"
-        //}
-
         $body = $this->BodyMidtrans("bank_transfer", ["gross_amount" => $dataOrder->total_price + $this->request->input('receipt_man')['cost'], "order_id" => $order_id], ["bank"=> "bni"]);
         $header = $this->GenerateHeaderMidtrans();
 
         $req = $this->request_API_POST($body, "https://api.sandbox.midtrans.com/v2/charge", ['Authorization: '.$header]);
-//        $response = '{"status_code":"201","status_message":"Success, Bank Transfer transaction is created","transaction_id":"1bfcbb4f-6177-4400-9736-8d5782ef4ff1","order_id":"1608820297","merchant_id":"G101348486","gross_amount":"300.00","currency":"IDR","payment_type":"bank_transfer","transaction_time":"2020-12-24 22:02:57","transaction_status":"pending","va_numbers":[{"bank":"bni","va_number":"9884848686348514"}],"fraud_status":"accept"}';
-//        $req = json_decode($response);
         if ($req->status_code == "201")
         {
             $transactionId = time();
@@ -127,6 +103,7 @@ class TransactionController extends Controller
             $saveTransaction->transaction_status = $req->transaction_status;
             $saveTransaction->transaction_time = "-";
             $saveTransaction->detail_transactions = json_encode($req);
+            $saveTransaction->status_pengiriman = "packing";
             $saveTransaction->save();
 			Orders::where("order_id", $order_id)->where("order_status", "create_on_transaction")->update(["order_status" =>"waiting_payment"]);
             Cart::where('user_id', $dataOrder->user_id)->where('status', "checkout")->update(["status" => "on_transaction"]);
@@ -152,10 +129,13 @@ class TransactionController extends Controller
 			$pays->transaction_time = $request->input('transaction_time');
 			$pays->transaction_status = $request->input('transaction_status');
 
-			$getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
-			foreach ($getOrderItem as $orderItem) {
-			    $this->updateStock($orderItem->product_id, $orderItem->quantity);
+			if (strtoupper($pays->transaction_status) == "SETTLEMENT"){
+                $getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
+                foreach ($getOrderItem as $orderItem) {
+                    $this->updateStock($orderItem->product_id, $orderItem->quantity);
+                }
             }
+
 
 			if($pays->save())
 			{
@@ -169,9 +149,11 @@ class TransactionController extends Controller
         $pays->transaction_status = $request->input('transaction_status');
         if($pays->save())
         {
-            $getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
-            foreach ($getOrderItem as $orderItem) {
-                $this->updateStock($orderItem->product_id, $orderItem->quantity);
+            if (strtoupper($pays->transaction_status) == "SETTLEMENT"){
+                $getOrderItem = OrderItems::where("order_id", $request->input('order_id'))->get();
+                foreach ($getOrderItem as $orderItem) {
+                    $this->updateStock($orderItem->product_id, $orderItem->quantity);
+                }
             }
             return response()->json(["messages"=> "Perubahan transaksi"], 200);
         }

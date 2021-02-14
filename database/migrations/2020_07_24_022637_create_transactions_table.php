@@ -22,6 +22,7 @@ class CreateTransactionsTable extends Migration
             $table->string("time_create_payment");
             $table->string('transaction_time');
             $table->string('transaction_status');
+            $table->string('status_pengiriman');
             $table->text('detail_transactions');
             $table->timestamps();
         });
