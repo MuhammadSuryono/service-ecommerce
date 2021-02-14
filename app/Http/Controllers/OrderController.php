@@ -112,7 +112,7 @@ class OrderController extends Controller
             $order->product_orders = $product;
 
             $transaction = Transactions::join('shipper', 'transactions.order_id', '=', 'shipper.id_order')
-                ->select('transactions.transaction_id', 'transactions.payment_type', 'transactions.status_pengiriman', 'transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
+                ->select('transactions.transaction_id', 'transactions.payment_type', 'transactions.status_pengiriman', 'transactions.number_resi','transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
                 ->where('transactions.order_id', $order->order_id)
                 ->first();
             $order->transactions = $transaction;
@@ -140,7 +140,7 @@ class OrderController extends Controller
         $users = User::find($data->user_id);
         $product = OrderItems::join('products', 'order_items.product_id', '=', 'products.id')->select('products.*', 'order_items.quantity as qty')->where('order_items.order_id', $orderId)->get();
         $transactionDetails = Transactions::join('shipper', 'transactions.order_id', '=', 'shipper.id_order')
-            ->select('transactions.transaction_id', 'transactions.payment_type','transactions.status_pengiriman', 'transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
+            ->select('transactions.transaction_id', 'transactions.payment_type','transactions.status_pengiriman','transactions.number_resi', 'transactions.time_create_payment', 'transactions.transaction_status', 'transactions.detail_transactions', 'shipper.*')
             ->where('transactions.order_id', $orderId)
             ->first();
 
@@ -164,5 +164,15 @@ class OrderController extends Controller
             return $this->BuildResponse(true, "Cancel order success", $order, 200);
         }
         return $this->BuildResponse(false, "Cancel order failed", $order, 400);
+    }
+
+    public function ReceivedOrder($orderId)
+    {
+        $transaction = Transactions::where("order_id", $orderId)->first();
+
+        $update = Transactions::find($transaction->id);
+        $update->status_pengiriman = "received";
+        $update->save();
+        return $this->BuildResponse(true, "Success update status pengiriman", $update, 200);
     }
 }

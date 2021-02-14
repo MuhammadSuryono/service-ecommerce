@@ -37,6 +37,8 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->post('order/by-user', 'OrderController@GetOrderByUserId');
 	$router->get('order/order-id/{orderId}', 'OrderController@GetOrder');
 	$router->get('order/cancel/{orderId}', 'OrderController@CancelOrder');
+    $router->get('order/received/{orderId}', 'OrderController@ReceivedOrder');
+
 
     // category route
     $router->get('category', 'CategoryController@getAll');
