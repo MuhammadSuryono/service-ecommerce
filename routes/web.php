@@ -60,6 +60,7 @@ $router->group(['prefix'=>'api/v1'], function() use ($router)
     $router->get('transactions/{id}', 'TransactionController@getById');
     $router->post('transactions/midtrans/push', 'TransactionController@notif');
 	$router->get('transactions/detail/{orderId}', 'TransactionController@getByOrderId');
+	$router->post('transactions/status-pengiriman', 'TransactionController@UpdateStatusPengiriman');
 
     $router->get('ongkir/province', 'RajaOngkir\RajaOngkirController@GetProvince');
     $router->get('ongkir/city', 'RajaOngkir\RajaOngkirController@GetCity');

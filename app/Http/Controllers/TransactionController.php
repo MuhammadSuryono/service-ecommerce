@@ -115,9 +115,30 @@ class TransactionController extends Controller
 
     }
 
+    public function UpdateStatusPengiriman(Request $request)
+    {
+        $this->validate($this->request, [
+            "transaction_id" => 'required',
+            "status_pengiriman" => 'required',
+        ]);
+
+        $transactionId = $request->input("transaction_id");
+        $statusPengiriman = $request->input("status_pengiriman");
+
+        $transaction = Transactions::where("transaction_id", $transactionId)->first();
+        if ($request->input("number_resi") != null) {
+            $transaction->number_resi = $request->input("number_resi");
+        }
+
+        $update = Transactions::find($transaction->id);
+        $update->status_pengiriman = $statusPengiriman;
+        $update->number_resi = $transaction->number_resi;
+        $update->save();
+        return $this->BuildResponse(true, "Success update status pengiriman", $update, 200);
+    }
+
     public function notif(Request $request)
     {
-		Log::info(json_encode($request->all()));
         $pay = Transactions::where('order_id', $request->input('order_id'))->first();
         // return $pay;
         if(!$pay)

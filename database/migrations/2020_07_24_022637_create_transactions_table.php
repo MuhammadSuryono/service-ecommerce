@@ -23,6 +23,7 @@ class CreateTransactionsTable extends Migration
             $table->string('transaction_time');
             $table->string('transaction_status');
             $table->string('status_pengiriman');
+            $table->string('number_resi')->default('0');
             $table->text('detail_transactions');
             $table->timestamps();
         });
